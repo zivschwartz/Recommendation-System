@@ -11,9 +11,8 @@ from pyspark.ml.recommendation import ALS, ALSModel
 from pyspark.ml.feature import StringIndexer
 from pyspark.sql import functions as F
 from pyspark.mllib.evaluation import RankingMetrics
-from pyspark.sql.functions import col
 
-def main(spark, model_file,data_file,user_file,track_file):
+def main(spark, model_file, data_file, user_file, track_file):
    
     #load ALS model
     als_model = ALSModel.load(model_file)
@@ -26,16 +25,15 @@ def main(spark, model_file,data_file,user_file,track_file):
     mapping = pipeline.fit(df_test)
     df_test = mapping.transform(df_test)
 
-    ########### PERFORM RANKING METRICS ##########
+    ########### PERFORM RANKING METRICS ###########
+    
     #create user actual items dataframe
-    actual_recs = df_test.groupBy('user_idx')\
-                    .agg(F.collect_list('track_idx').alias('track_idx'))
+    actual_recs = df_test.groupBy('user_idx').agg(F.collect_list('track_idx').alias('track_idx'))
      
     #create user predicted items dataframe
     user_subset = df_test.select('user_idx').distinct()
-    pred_recs = als_model.recommendForUserSubset(user_subset,500)
-    pred_recs = pred_recs.select('user_idx',\
-                    col('recommendations.track_idx').alias('track_idx'))
+    pred_recs = als_model.recommendForUserSubset(user_subset, 500)
+    pred_recs = pred_recs.select('user_idx', F.col('recommendations.track_idx').alias('track_idx'))
 
     #create user item RDD & join on users 
     perUserItemsRDD = pred_recs\
@@ -45,8 +43,7 @@ def main(spark, model_file,data_file,user_file,track_file):
     rankingMetrics = RankingMetrics(perUserItemsRDD)
 
     #print results to the console
-    print("Ranking Metrics MAP: ",rankingMetrics.meanAveragePrecision)
-
+    print("Ranking Metrics MAP: ", rankingMetrics.meanAveragePrecision)
 
 
 # Only enter this block if we're in main
@@ -66,4 +63,4 @@ if __name__ == "__main__":
     track_file = sys.argv[4]
 
     # Call our main routine
-    main(spark, model_file, data_file,user_file,track_file)
+    main(spark, model_file, data_file, user_file, track_file)
