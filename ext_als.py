@@ -16,7 +16,7 @@ def main(spark, data_file, model_file, user_file, track_file, model_formulation 
    
     if model_formulation == 'log':
         #log compression on training
-        df = df.withColumn('count', log(F.col('count')))
+        df = df.withColumn('count', F.log(F.col('count')))
    
     elif model_formulation == 'ct1':
         #subsetting all train counts greater than 1
@@ -29,8 +29,8 @@ def main(spark, data_file, model_file, user_file, track_file, model_formulation 
         df = spark.sql('SELECT * FROM df WHERE count > 2')
     
     else:
-        #If no model formulation is specified, continue
-        continue
+        #If no model formulation is specified, pass
+        pass
 
     user_indexer = StringIndexer(inputCol="user_id", outputCol="user_idx", handleInvalid="keep")
     track_indexer = StringIndexer(inputCol="track_id", outputCol="track_idx", handleInvalid="keep")
