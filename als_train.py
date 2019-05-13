@@ -16,7 +16,7 @@ from pyspark.sql.functions import col
 from pyspark.mllib.evaluation import RankingMetrics
 
 def main(spark, data_file, model_file,user_file,track_file):
-    df = spark.read.parquet(data_file).sample(0.01)
+    df = spark.read.parquet(data_file)
     
     user_indexer = StringIndexer(inputCol="user_id", outputCol="user_idx",\
                         handleInvalid='keep')
@@ -28,7 +28,7 @@ def main(spark, data_file, model_file,user_file,track_file):
     df = mapping.transform(df)
     
     #create + fit an ALS model
-    als = ALS(maxIter=5, regParam=0.01, implicitPrefs=True,\
+    als = ALS(maxIter=5, regParam=0.01, implicitPrefs=True,ratingCol='count',\
                         userCol="user_idx", itemCol="track_idx")
     als_model = als.fit(df)
     
@@ -50,4 +50,4 @@ if __name__ == "__main__":
     user_file = sys.argv[3]
     track_file = sys.argv[4]
 
-    main(spark,data_file,model_file,user_index,track_index)
+    main(spark,data_file,model_file,user_file,track_file)

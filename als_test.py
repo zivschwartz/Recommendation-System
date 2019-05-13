@@ -33,7 +33,7 @@ def main(spark, model_file,data_file,user_file,track_file):
      
     #create user predicted items dataframe
     user_subset = df_test.select('user_idx').distinct()
-    pred_recs = als_model.recommendForUserSubset(user_subset,10)
+    pred_recs = als_model.recommendForUserSubset(user_subset,500)
     pred_recs = pred_recs.select('user_idx',\
                     col('recommendations.track_idx').alias('track_idx'))
 
@@ -45,7 +45,7 @@ def main(spark, model_file,data_file,user_file,track_file):
     rankingMetrics = RankingMetrics(perUserItemsRDD)
 
     #print results to the console
-    print("Ranking Metrics MAP: {}",rankingMetrics.meanAveragePrecision)
+    print("Ranking Metrics MAP: ",rankingMetrics.meanAveragePrecision)
 
 
 
