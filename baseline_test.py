@@ -20,9 +20,9 @@ def main(spark, model_file, data_file):
 
     #read in test data as parquet
     df_test = spark.read.parquet(data_file)
-    uid_indexer = StringIndexer(inputCol="user_id", outputCol="user_id_num",\
+    uid_indexer = StringIndexer(inputCol="user_id", outputCol="user_idx",\
                         handleInvalid='keep')
-    tid_indexer = StringIndexer(inputCol="track_id", outputCol="track_id_num",\
+    tid_indexer = StringIndexer(inputCol="track_id", outputCol="track_idx",\
                         handleInvalid='keep')
 
     pipeline = Pipeline(stages=[uid_indexer, tid_indexer])
@@ -31,23 +31,23 @@ def main(spark, model_file, data_file):
 
     ########### PERFORM RANKING METRICS ##########
     #create user actual items dataframe
-    actual_recs = df_test.groupBy('user_id_num')\
-                    .agg(F.collect_list('track_id_num').alias('track_id_num'))
+    actual_recs = df_test.groupBy('user_idx')\
+                    .agg(F.collect_list('track_idx').alias('track_idx'))
      
     #create user predicted items dataframe
-    user_subset = df_test.select('user_id_num').distinct()
-    pred_recs = als_model.recommendForUserSubset(user_subset,10)
-    pred_recs = pred_recs.select('user_id_num',\
-                    col('recommendations.track_id_num').alias('track_id_num'))
+    user_subset = df_test.select('user_idx').distinct()
+    pred_recs = als_model.recommendForUserSubset(user_subset,500)
+    pred_recs = pred_recs.select('user_idx',\
+                    col('recommendations.track_idx').alias('track_idx'))
 
     #create user item RDD & join on users 
     perUserItemsRDD = pred_recs\
-                        .join(actual_recs, on='user_id_num').rdd\
+                        .join(actual_recs, on='user_idx').rdd\
                         .map(lambda row: (row[1], row[2]))
     
     rankingMetrics = RankingMetrics(perUserItemsRDD)
     #print results to the console
-    print("Ranking Metrics MAP: {}".format(rankingMetrics.meanAveragePrecision))
+    print("Ranking Metrics MAP: {}",rankingMetrics.meanAveragePrecision)
 
 
 
@@ -55,7 +55,7 @@ def main(spark, model_file, data_file):
 if __name__ == "__main__":
 
     # Create the spark session object
-    spark = SparkSession.builder.appName('test_als').getOrCreate()
+    spark = SparkSession.builder.appName('baseline_test').getOrCreate()
 
     # And the location to store the trained model
     model_file = sys.argv[1]
