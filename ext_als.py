@@ -11,25 +11,29 @@ from pyspark.ml.feature import StringIndexer
 from pyspark.ml.recommendation import ALS
 from pyspark.sql import functions as F 
 
-def main(spark, data_file, model_file, user_file, track_file, model_formulation = None):
+def main(spark, data_file, model_file, user_file, track_file, model_formulation = None): 
     df = spark.read.parquet(data_file)
-   
+    
     if model_formulation == 'log':
         #log compression on training
         df = df.withColumn('count', F.log(F.col('count')))
-   
+        print("log")
+    
     elif model_formulation == 'ct1':
         #subsetting all train counts greater than 1
         df.createOrReplaceTempView('df')
         df = spark.sql('SELECT * FROM df WHERE count > 1')
-
+        print("ct1")
+    
     elif model_formulation == 'ct2':
         #subsetting all train counts greater than 2
         df.createOrReplaceTempView('df')
         df = spark.sql('SELECT * FROM df WHERE count > 2')
+        print("ct2")
     
     else:
         #If no model formulation is specified, pass
+        print("default")
         pass
 
     user_indexer = StringIndexer(inputCol="user_id", outputCol="user_idx", handleInvalid="keep")
